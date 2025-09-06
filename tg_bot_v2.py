@@ -9,15 +9,15 @@ from telebot.types import Message
 import threading
 
 # ============================ CONFIG ============================
-BOT_TOKEN = os.getenv("BOT_TOKEN", "7805334833:AAHrDa-kWwL_LMBD1lnun4m_DWZ-qMOHaUw").strip()
+BOT_TOKEN = os.getenv("BOT_TOKEN", "7613091959:AAGrY_9XeZNda1GnbBFA_prDQG_Zoa2_7K8").strip()
 if not BOT_TOKEN:
     raise RuntimeError("Please set BOT_TOKEN environment variable with your Telegram Bot token.")
 
 # লাইসেন্স
-LICENSE_KEY = "z"
+LICENSE_KEY = "2025"
 
 # Channel requirement
-CHANNEL_USERNAME = "@srtradinglab06"  # তোমার channel username
+CHANNEL_USERNAME = "@JuniorEMON02"  # তোমার channel username
 
 # ===============================================================
 # Fancy (Mathematical Sans-Serif Bold) mapping
@@ -107,9 +107,6 @@ def reset_state(user_id: int):
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode="HTML")
 WELCOME = "❤️ Welcome to Peradox Future Signal. Unmute the channel and pin it to the top. 💯"
 
-# ===================== Notice System =====================
-subscribers = set()
-
 # ===============================================================
 # Channel membership checker
 def is_user_in_channel(user_id):
@@ -130,30 +127,18 @@ def require_channel(func):
         return func(message)
     return wrapper
 
-# /start দিলে ইউজার সেভ হবে
+# ===============================================================
 @bot.message_handler(commands=['start', '/'])
 @require_channel
 def handle_start(message: Message):
     user_id = message.chat.id
-    if user_id not in subscribers:
-        subscribers.add(user_id)
     reset_state(user_id)
     bot.send_message(message.chat.id, WELCOME)
     ask_license(message.chat.id)
 
-def send_notice_to_all(notice_text):
-    for user_id in subscribers:
-        try:
-            bot.send_message(user_id, f"{notice_text}")
-        except Exception as e:
-            print(f"Failed to send to {user_id}: {e}")
-
-def notice_input_loop():
-    while True:
-        notice = input("Enter the notice: ")
-        if notice.strip():
-            send_notice_to_all(notice)
-            print("✅ Notice sent to all subscribers.\n")
+@bot.message_handler(func=lambda m: m.text and m.text.strip() == "/")
+def handle_slash_plain(message: Message):
+    handle_start(message)
 
 # ===============================================================
 # Ask functions
@@ -177,22 +162,6 @@ def ask_backtest_day(chat_id):
 
 def ask_direction(chat_id):
     bot.send_message(chat_id, "🎯 Enter the signal direction (CALL/PUT/BOTH):")
-
-# ===============================================================
-# Command handlers
-@bot.message_handler(commands=['start', '/'])
-@require_channel
-def handle_start(message: Message):
-    user_id = message.chat.id
-    if user_id not in subscribers:
-        subscribers.add(user_id)
-    reset_state(user_id)
-    bot.send_message(message.chat.id, WELCOME)
-    ask_license(message.chat.id)
-
-@bot.message_handler(func=lambda m: m.text and m.text.strip() == "/")
-def handle_slash_plain(message: Message):
-    handle_start(message)
 
 # ===============================================================
 # Conversation handler
@@ -328,7 +297,4 @@ def conversation(message: Message):
 # ===============================================================
 if __name__ == "__main__":
     print("Peradox Signal Bot is running...")
-    # Start bot polling in a separate thread
-    threading.Thread(target=bot.infinity_polling, kwargs={'skip_pending': True, 'timeout': 60}, daemon=True).start()
-    # Start notice input loop in main thread
-    notice_input_loop()
+    bot.infinity_polling(skip_pending=True, timeout=60)
